@@ -29,7 +29,7 @@ function Account(options) {
 Account.prototype = {
   // if data exists, fill in entries
   loadEntries: function() {
-    // this.entries = Storage.read(sql, success, failure);
+    // this.entries = this.cheque.storage.read(sql, success, failure);
   },
   // save balance for reporting purposes (as in dashboard)
   save: function() {
@@ -102,7 +102,7 @@ Account.prototype = {
     this.entries.splice(index, 1);
     
     // build sql
-    // Storage.erase(sql, success, failure);
+    // this.cheque.storage.erase(sql, success, failure);
     this.save();
   },
   // utility functions
@@ -132,13 +132,13 @@ Account.prototype = {
       }
 
       // build appropriate sql
-      Storage.transact(function() {
+      this.cheque.storage.transact(function() {
         var sql = "";
         if(options.id)
           ;// update
         else
           ;// insert
-        Storage.write(sql, function() {
+        this.cheque.storage.write(sql, function() {
           
         }, function(){});
       });

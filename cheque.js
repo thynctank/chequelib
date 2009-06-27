@@ -8,6 +8,7 @@
 
 function Cheque() {
   this.accounts = new Hash();
+  this.storage = new Storage();
   // in reality, query accounts table for names/balances
   this.addAccount({id: 1, name: "Bank of America", balance: 1575});
   this.addAccount({id: 2, name: "Congressional", balance: 10050});

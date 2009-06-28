@@ -21,9 +21,12 @@ function Account(options) {
     this.name = options.name;
     this.cheque = options.cheque;
     this.id = options.id || null;
+    this.type = options.type || "checking";
     this.balance = options.balance || 0;
+    this.notes = options.notes;
     this.entries = [];
   }
+  this.cheque.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"});
 }
 
 Account.prototype = {
@@ -38,11 +41,8 @@ Account.prototype = {
     if(this.entries.length === 0 && this.balance < 0)
       this.debit({subject: "Opening Balance", amount: this.balance, calledFromSave: true});
 
-    // assign auto-increment ID to this.id if not exist
-    if(!this.id)
-      this.id = 1;
-    
     this.balance = this.getBalance();
+    this.cheque.write("accounts", {id: this.id, balance: this.balance});
   },
   // options for getBalance allow for filtering by type, actual vs cleared
   getBalance: function(options) {
@@ -132,16 +132,7 @@ Account.prototype = {
       }
 
       // build appropriate sql
-      this.cheque.storage.transact(function() {
-        var sql = "";
-        if(options.id)
-          ;// update
-        else
-          ;// insert
-        this.cheque.storage.write(sql, function() {
-          
-        }, function(){});
-      });
+      this.cheque.storage.write("entries", options);
       
       if(options.calledFromSave)
         return;

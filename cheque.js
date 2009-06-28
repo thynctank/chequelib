@@ -7,25 +7,35 @@
 // notes
 
 function Cheque() {
+  var self = this;
   this.accounts = new Hash();
   this.storage = new Storage();
-  // in reality, query accounts table for names/balances
-  this.addAccount({id: 1, name: "Bank of America", balance: 1575});
-  this.addAccount({id: 2, name: "Congressional", balance: 10050});
+  this.storage.createTable("accounts", {name: "string", balance: "number", type: "string", notes: "text"}, function() {
+    // in reality, query accounts table for names/balances
+    self.addAccount({name: "Bank of America", balance: 1575});
+    self.addAccount({name: "Congressional", balance: 10050});
+  });
 }
 
 Cheque.prototype = {
   addAccount: function(options) {
+    var self = this;
     var name = options.name;
-    options.cheque = this;
     
     if(this.accounts.has(name))
-      return false;
+      return;
     else {
-      var acct = new Account(options);
-      this.accounts.set(name, acct);
-      this.accounts.get(name).save();
-      return acct;
+      this.storage.count("accounts", options, function(rowCount) {
+        if(rowCount === 0) {
+          self.storage.write("accounts", options, function(insertId) {
+            options.cheque = self;
+            options.id = insertId;
+            var acct = new Account(options);
+            self.accounts.set(name, acct);
+            console.log(acct);
+          });
+        }
+      });
     }
   },
   removeAccount: function(name) {

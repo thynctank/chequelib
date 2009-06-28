@@ -12,8 +12,14 @@ function Cheque() {
   this.storage = new Storage();
   this.storage.createTable("accounts", {name: "string", balance: "number", type: "string", notes: "text"}, function() {
     // in reality, query accounts table for names/balances
-    self.addAccount({name: "Bank of America", balance: 1575});
-    self.addAccount({name: "Congressional", balance: 10050});
+    self.storage.read("accounts", null, function(rows) {
+      for(var i = 0, j = rows.length; i < j; i++) {
+        var data = rows[i];
+        data.cheque = self;
+        var acct = new Account(data);
+        self.accounts.set(acct.name, acct);
+      }
+    });
   });
 }
 
@@ -25,7 +31,7 @@ Cheque.prototype = {
     if(this.accounts.has(name))
       return;
     else {
-      this.storage.count("accounts", options, function(rowCount) {
+      this.storage.count("accounts", {name: options.name}, function(rowCount) {
         if(rowCount === 0) {
           self.storage.write("accounts", options, function(insertId) {
             options.cheque = self;

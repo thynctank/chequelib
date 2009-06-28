@@ -25,14 +25,25 @@ function Account(options) {
     this.balance = options.balance || 0;
     this.notes = options.notes;
     this.entries = [];
+    
+    var self = this;
+    this.cheque.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"}, function() {
+      self.loadEntries(function() {
+        self.save();
+      });
+    });
   }
-  this.cheque.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"});
 }
 
 Account.prototype = {
-  // if data exists, fill in entries
-  loadEntries: function() {
-    // this.entries = this.cheque.storage.read(sql, success, failure);
+  // if data exists, fill in entries, callback takes entries array
+  loadEntries: function(callback) {
+    var self = this;
+    this.cheque.storage.read("entries", {account_id: this.id}, function(rows) {
+      self.entries = rows;
+      if(callback)
+        callback();
+    });
   },
   // save balance for reporting purposes (as in dashboard)
   save: function() {
@@ -42,7 +53,7 @@ Account.prototype = {
       this.debit({subject: "Opening Balance", amount: this.balance, calledFromSave: true});
 
     this.balance = this.getBalance();
-    this.cheque.write("accounts", {id: this.id, balance: this.balance});
+    this.cheque.storage.write("accounts", {id: this.id, balance: this.balance});
   },
   // options for getBalance allow for filtering by type, actual vs cleared
   getBalance: function(options) {
@@ -60,6 +71,10 @@ Account.prototype = {
     options = options ? options : {};
     options.type = "debit";
     this._writeEntry(options);
+  },
+  getBalanceString: function(options) {
+    // return as string with 2 decimal places
+    return (this.getBalance()/100).toFixed(2);
   },
   credit: function(options) {
     options = options ? options : {};
@@ -125,7 +140,7 @@ Account.prototype = {
           memo: options.memo || null,
           transfer_account_id: options.transfer_account_id || null,
           transfer_entry_id: options.transfer_entry_id || null,
-          pending: options.pending || true,
+          pending: options.pending || 1,
           check_number: options.check_number || null
         };
         this.entries.push(options);

@@ -65,7 +65,7 @@ Account.prototype = {
     return balance;
   },
   // all three functions call transact
-  debit: function(options) {
+  debit: function(options, success) {
     options = options ? options : {};
     options.type = "debit";
     this._writeEntry(options);
@@ -74,7 +74,7 @@ Account.prototype = {
     // return as string with 2 decimal places
     return (this.getBalance()/100).toFixed(2);
   },
-  credit: function(options) {
+  credit: function(options, success) {
     options = options ? options : {};
     options.type = "credit";
     this._writeEntry(options);
@@ -120,32 +120,29 @@ Account.prototype = {
   },
   // utility functions
   // transact should be able to rollback if something goes wrong, save if all works
-  _writeEntry: function(options, index) {
+  _writeEntry: function(options) {
     if(!options || !options.type || !options.subject || !options.amount)
       throw("Error. Minimum data for entry (subject, amount) not present");
     else {
-      if(index) {
-        this.entries[index] = options;
-      }
-      else {
-        // require minimum options of type, subject, amount
-        options = {
-          account_id: this.id,
-          type: options.type,
-          subject: options.subject,
-          amount: options.amount,
-          date: options.date || (new Date().getTime()),
-          memo: options.memo || null,
-          transfer_account_id: options.transfer_account_id || null,
-          transfer_entry_id: options.transfer_entry_id || null,
-          pending: options.pending || 1,
-          check_number: options.check_number || null
-        };
+      // require minimum options of type, subject, amount
+      options = {
+        account_id: this.id,
+        type: options.type,
+        subject: options.subject,
+        amount: options.amount,
+        date: options.date || (new Date().getTime()),
+        memo: options.memo || null,
+        transfer_account_id: options.transfer_account_id || null,
+        transfer_entry_id: options.transfer_entry_id || null,
+        pending: options.pending || 1,
+        check_number: options.check_number || null
+      };
+      if(!options.id) {
         this.entries.push(options);
+        this.sort();
       }
 
       var self = this;
-      // build appropriate sql
       this.cheque.storage.write("entries", options, function() {
         if(options.calledFromSave)
           return;

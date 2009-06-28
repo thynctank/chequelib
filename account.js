@@ -112,10 +112,9 @@ Account.prototype = {
     }
   },
   eraseEntry: function(index, success, failure) {
+    var entry = this.entries[index];
+    this.cheque.storage.erase("entries", {id: entry.id});
     this.entries.splice(index, 1);
-    
-    // build sql
-    // this.cheque.storage.erase(sql, success, failure);
     this.save();
   },
   // utility functions

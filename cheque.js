@@ -12,7 +12,7 @@ function Cheque() {
   this.storage = new Storage();
   this.storage.createTable("accounts", {name: "string", balance: "number", type: "string", notes: "text"}, function() {
     // in reality, query accounts table for names/balances
-    self.storage.read("accounts", null, function(rows) {
+    self.storage.read("accounts", null, null, function(rows) {
       for(var i = 0, j = rows.length; i < j; i++) {
         var data = rows[i];
         data.cheque = self;
@@ -46,6 +46,9 @@ Cheque.prototype = {
   },
   removeAccount: function(name) {
     // wipe out all entries for this account number first
+    var acct = this.getAccount(name);
+    this.storage.erase("entries", {account_id: acct.id});
+    this.storage.erase("accounts", {id: acct.id});
     this.accounts.remove(name);
   },
   getAccount: function(name) {

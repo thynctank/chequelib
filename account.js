@@ -27,11 +27,7 @@ function Account(options) {
     this.entries = [];
     
     var self = this;
-    this.cheque.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"}, function() {
-      self.loadEntries(function() {
-        self.save();
-      });
-    });
+    this.cheque.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"});
   }
 }
 
@@ -39,19 +35,21 @@ Account.prototype = {
   // if data exists, fill in entries, callback takes entries array
   loadEntries: function(callback) {
     var self = this;
-    this.cheque.storage.read("entries", {account_id: this.id}, function(rows) {
+    this.cheque.storage.read("entries", {account_id: this.id}, null, function(rows) {
       self.entries = rows;
+      self.balance = self.getBalance();
       if(callback)
         callback();
     });
   },
   // save balance for reporting purposes (as in dashboard)
   save: function() {
-    if(this.entries.length === 0 && this.balance > 0)
-      this.credit({subject: "Opening Balance", amount: this.balance, calledFromSave: true});
-    if(this.entries.length === 0 && this.balance < 0)
-      this.debit({subject: "Opening Balance", amount: this.balance, calledFromSave: true});
-
+    if(this.entries.length === 0) {
+      if(this.entries.length === 0 && this.balance > 0)
+        this.credit({subject: "Opening Balance", amount: this.balance, calledFromSave: true});
+      if(this.entries.length === 0 && this.balance < 0)
+        this.debit({subject: "Opening Balance", amount: this.balance, calledFromSave: true});
+    }
     this.balance = this.getBalance();
     this.cheque.storage.write("accounts", {id: this.id, balance: this.balance});
   },
@@ -146,16 +144,27 @@ Account.prototype = {
         this.entries.push(options);
       }
 
+      var self = this;
       // build appropriate sql
-      this.cheque.storage.write("entries", options);
-      
-      if(options.calledFromSave)
-        return;
-      else
-        this.save();
+      this.cheque.storage.write("entries", options, function() {
+        if(options.calledFromSave)
+          return;
+        else
+          self.save();
+      });
     }
   },
-  sort: function(column) {}
+  sort: function(column) {
+    if(!column)
+      column = "date";
+    this.entries.sort(function(a, b) {
+      if(a[column] < b[column])
+        return -1;
+      if(a[column] > b[column])
+        return 1;
+      return 0;
+    });
+  }
 };
 
 // tie into universal search?

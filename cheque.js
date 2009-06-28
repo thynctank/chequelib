@@ -8,7 +8,7 @@
 
 function Cheque() {
   var self = this;
-  this.accounts = new Hash();
+  this.accounts = new ChequeHash();
   this.storage = new Storage();
   this.storage.createTable("accounts", {name: "string", balance: "number", type: "string", notes: "text"}, function() {
     // in reality, query accounts table for names/balances

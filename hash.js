@@ -1,8 +1,8 @@
-function Hash(obj) {
+function ChequeHash(obj) {
   this.data = obj || {};
 };
 
-Hash.prototype = {
+ChequeHash.prototype = {
   has: function(key) {
     if(this.data.hasOwnProperty(key))
       return true;

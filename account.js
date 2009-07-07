@@ -91,14 +91,15 @@ Account.prototype = {
       else {
         options.subject = options.subject ? options.subject : "Transfer: " + this.name + " to " + thatAccount.name;
 
-        var theseOptions = options;
+        var theseOptions, thoseOptions = options;
         theseOptions.transfer_account_id = thatAccount.id;
-        // get ID from this _writeEntry call, index
-        this.debit(theseOptions);
-
-        var thoseOptions = options;
-        
         thoseOptions.transfer_account_id = this.id;
+        
+        var self = this;
+        
+        self.debit(theseOptions);
+        // get ID from this _writeEntry call, index
+
         // set to ID obtained from first _writeEntry
         thoseOptions.transfer_entry_id = null;
         
@@ -107,7 +108,7 @@ Account.prototype = {
         
         // use second obtained ID
         theseOptions.transfer_entry_id = null;
-        // this.credit(theseOptions, index);
+        // this._writeEntry(theseOptions, index);
       }
     }
   },
@@ -143,9 +144,7 @@ Account.prototype = {
 
       var self = this;
       this.cheque.storage.write("entries", options, function() {
-        if(options.calledFromSave)
-          return;
-        else
+        if(!options.calledFromSave)
           self.save();
       });
     }

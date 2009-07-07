@@ -68,7 +68,7 @@ Account.prototype = {
   debit: function(options, success) {
     options = options ? options : {};
     options.type = "debit";
-    this._writeEntry(options);
+    this._writeEntry(options, success);
   },
   getBalanceString: function(options) {
     // return as string with 2 decimal places
@@ -77,7 +77,7 @@ Account.prototype = {
   credit: function(options, success) {
     options = options ? options : {};
     options.type = "credit";
-    this._writeEntry(options);
+    this._writeEntry(options, success);
   },
   // takes regular options obj but also takes transferAccountName
   transfer: function(options) {
@@ -91,24 +91,30 @@ Account.prototype = {
       else {
         options.subject = options.subject ? options.subject : "Transfer: " + this.name + " to " + thatAccount.name;
 
-        var theseOptions, thoseOptions = options;
+        debugger;
+        var theseOptions = options;
+        var thoseOptions = options;
         theseOptions.transfer_account_id = thatAccount.id;
         thoseOptions.transfer_account_id = this.id;
         
         var self = this;
         
-        self.debit(theseOptions);
-        // get ID from this _writeEntry call, index
-
-        // set to ID obtained from first _writeEntry
-        thoseOptions.transfer_entry_id = null;
-        
-        // get this ID for third db hit
-        thatAccount.credit(thoseOptions);
-        
-        // use second obtained ID
-        theseOptions.transfer_entry_id = null;
-        // this._writeEntry(theseOptions, index);
+        self.debit(theseOptions, function(thisInsertId) {
+          // set to ID obtained from first _writeEntry
+          thoseOptions.transfer_entry_id = thisInsertId;
+          // get second ID for third db hit
+          thatAccount.credit(thoseOptions, function(thatInsertId) {
+            theseOptions.transfer_entry_id = thatInsertId;
+            theseOptions.id = thisInsertId;
+            theseOptions.type = "debit";
+            self._writeEntry(theseOptions);
+          }, function() {
+            // rollback if second transaction failed
+            self.cheque.storage.erase("entries", {id: thisInsertId}, function() {
+              self.save();
+            });
+          });
+        });
       }
     }
   },
@@ -120,7 +126,7 @@ Account.prototype = {
   },
   // utility functions
   // transact should be able to rollback if something goes wrong, save if all works
-  _writeEntry: function(options) {
+  _writeEntry: function(options, success) {
     if(!options || !options.type || !options.subject || !options.amount)
       throw("Error. Minimum data for entry (subject, amount) not present");
     else {
@@ -130,6 +136,7 @@ Account.prototype = {
         type: options.type,
         subject: options.subject,
         amount: options.amount,
+        id: options.id || null,
         date: options.date || (new Date().getTime()),
         memo: options.memo || null,
         transfer_account_id: options.transfer_account_id || null,
@@ -137,13 +144,17 @@ Account.prototype = {
         pending: options.pending || 1,
         check_number: options.check_number || null
       };
-      if(!options.id) {
-        this.entries.push(options);
-        this.sort();
-      }
 
       var self = this;
-      this.cheque.storage.write("entries", options, function() {
+      this.cheque.storage.write("entries", options, function(insertId) {
+        if(!options.id) {
+          options.id = insertId;
+          self.entries.push(options);
+          self.sort();
+        }
+        
+        if(success)
+          success(insertId);
         if(!options.calledFromSave)
           self.save();
       });

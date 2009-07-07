@@ -121,8 +121,22 @@ Account.prototype = {
   eraseEntry: function(index, success, failure) {
     var entry = this.entries[index];
     this.cheque.storage.erase("entries", {id: entry.id});
-    this.entries.splice(index, 1);
+    // erase both sides of a transfer
+    if(entry.transfer_entry_id)
+      this.cheque.storage.erase("entries", {id: entry.transfer_entry_id});
+
+    var thatAccount = this.cheque.getAccountById(entry.transfer_account_id);
+    // if entry is debit, other entry must be credit, so subtract balance to reverse
+    if(entry.type == "debit")
+      thatAccount.balance -= entry.amount;
+    else
+      thatAccount.balance += entry.amount;
+
+    thatAccount.save();
     this.save();
+
+    this.entries.splice(index, 1);
+
   },
   // utility functions
   // transact should be able to rollback if something goes wrong, save if all works

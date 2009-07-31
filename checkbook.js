@@ -6,10 +6,11 @@
 // type
 // notes
 
-function Cheque() {
+function Checkbook(dbName) {
+  dbName = (dbName) ? dbName : "Cheque";
   var self = this;
   this.accounts = new ChequeHash();
-  this.storage = new Storage("Cheque");
+  this.storage = new Storage(dbName);
   this.storage.createTable("accounts", {name: "string", balance: "number", type: "string", notes: "text"}, function() {
     // in reality, query accounts table for names/balances
     self.storage.read("accounts", null, null, function(rows) {
@@ -23,7 +24,7 @@ function Cheque() {
   });
 }
 
-Cheque.prototype = {
+Checkbook.prototype = {
   addAccount: function(options) {
     var self = this;
     var name = options.name;

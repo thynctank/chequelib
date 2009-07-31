@@ -15,11 +15,11 @@
 // entries is an array of obj literals with properties matching entries table cols
 
 function Account(options) {
-  if(!options || !options.name || !options.cheque)
+  if(!options || !options.name || !options.checkbook)
     throw("Error. Minimum data for account (name, cheque) not present");
   else {
     this.name = options.name;
-    this.cheque = options.cheque;
+    this.checkbook = options.checkbook;
     this.id = options.id || null;
     this.type = options.type || "checking";
     this.balance = options.balance || 0;
@@ -27,7 +27,7 @@ function Account(options) {
     this.entries = [];
     
     var self = this;
-    this.cheque.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"});
+    this.checkbook.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"});
   }
 }
 
@@ -35,7 +35,7 @@ Account.prototype = {
   // if data exists, fill in entries, callback takes entries array
   loadEntries: function(callback) {
     var self = this;
-    this.cheque.storage.read("entries", {account_id: this.id}, null, function(rows) {
+    this.checkbook.storage.read("entries", {account_id: this.id}, null, function(rows) {
       self.entries = rows;
       self.balance = self.getBalance();
       if(callback)
@@ -51,7 +51,7 @@ Account.prototype = {
         this.debit({subject: "Opening Balance", amount: this.balance, calledFromSave: true});
     }
     this.balance = this.getBalance();
-    this.cheque.storage.write("accounts", {id: this.id, balance: this.balance});
+    this.checkbook.storage.write("accounts", {id: this.id, balance: this.balance});
   },
   // options for getBalance allow for filtering by type, actual vs cleared
   getBalance: function(options) {
@@ -85,7 +85,7 @@ Account.prototype = {
     if(!options || !options.transferAccountName)
       throw("Error. Minimum data for transfer (transferAccountName) not present");
     else {
-      var thatAccount = this.cheque.getAccount(options.transferAccountName);
+      var thatAccount = this.checkbook.getAccount(options.transferAccountName);
       if(!thatAccount)
         throw("Error. Transfer account does not exist");
       else {
@@ -110,7 +110,7 @@ Account.prototype = {
             self._writeEntry(theseOptions);
           }, function() {
             // rollback if second transaction failed
-            self.cheque.storage.erase("entries", {id: thisInsertId}, function() {
+            self.checkbook.storage.erase("entries", {id: thisInsertId}, function() {
               self.save();
             });
           });
@@ -120,12 +120,12 @@ Account.prototype = {
   },
   eraseEntry: function(index, success, failure) {
     var entry = this.entries[index];
-    this.cheque.storage.erase("entries", {id: entry.id});
+    this.checkbook.storage.erase("entries", {id: entry.id});
     // erase both sides of a transfer
     if(entry.transfer_entry_id)
-      this.cheque.storage.erase("entries", {id: entry.transfer_entry_id});
+      this.checkbook.storage.erase("entries", {id: entry.transfer_entry_id});
 
-    var thatAccount = this.cheque.getAccountById(entry.transfer_account_id);
+    var thatAccount = this.checkbook.getAccountById(entry.transfer_account_id);
     // if entry is debit, other entry must be credit, so subtract balance to reverse
     if(entry.type == "debit")
       thatAccount.balance -= entry.amount;
@@ -160,7 +160,7 @@ Account.prototype = {
       };
 
       var self = this;
-      this.cheque.storage.write("entries", options, function(insertId) {
+      this.checkbook.storage.write("entries", options, function(insertId) {
         if(!options.id) {
           options.id = insertId;
           self.entries.push(options);

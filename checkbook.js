@@ -16,7 +16,7 @@ function Checkbook(dbName) {
     self.storage.read("accounts", null, null, function(rows) {
       for(var i = 0, j = rows.length; i < j; i++) {
         var data = rows[i];
-        data.cheque = self;
+        data.checkbook = self;
         var acct = new Account(data);
         self.accounts.set(acct.name, acct);
       }
@@ -25,7 +25,7 @@ function Checkbook(dbName) {
 }
 
 Checkbook.prototype = {
-  addAccount: function(options) {
+  addAccount: function(options, success) {
     var self = this;
     var name = options.name;
     
@@ -35,21 +35,21 @@ Checkbook.prototype = {
       this.storage.count("accounts", {name: options.name}, function(rowCount) {
         if(rowCount === 0) {
           self.storage.write("accounts", options, function(insertId) {
-            options.cheque = self;
+            options.checkbook = self;
             options.id = insertId;
             var acct = new Account(options);
             self.accounts.set(name, acct);
-            console.log(acct);
+            success();
           });
         }
       });
     }
   },
-  removeAccount: function(name) {
+  removeAccount: function(name, success) {
     // wipe out all entries for this account number first
     var acct = this.getAccount(name);
     this.storage.erase("entries", {account_id: acct.id});
-    this.storage.erase("accounts", {id: acct.id});
+    this.storage.erase("accounts", {id: acct.id}, success);
     this.accounts.remove(name);
   },
   getAccount: function(name) {

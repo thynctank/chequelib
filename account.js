@@ -27,7 +27,6 @@ function Account(options) {
     this.entries = [];
     
     var self = this;
-    this.checkbook.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"});
   }
 }
 
@@ -118,29 +117,31 @@ Account.prototype = {
       }
     }
   },
-  eraseEntry: function(index, success, failure) {
+  eraseEntry: function(index, callback) {
     var entry = this.entries[index];
     this.checkbook.storage.erase("entries", {id: entry.id});
     // erase both sides of a transfer
-    if(entry.transfer_entry_id)
+    if(entry.transfer_entry_id) {
       this.checkbook.storage.erase("entries", {id: entry.transfer_entry_id});
+      var thatAccount = this.checkbook.getAccountById(entry.transfer_account_id);
+      // if entry is debit, other entry must be credit, so subtract balance to reverse
+      if(entry.type == "debit")
+        thatAccount.balance -= entry.amount;
+      else
+        thatAccount.balance += entry.amount;
 
-    var thatAccount = this.checkbook.getAccountById(entry.transfer_account_id);
-    // if entry is debit, other entry must be credit, so subtract balance to reverse
-    if(entry.type == "debit")
-      thatAccount.balance -= entry.amount;
-    else
-      thatAccount.balance += entry.amount;
+      thatAccount.save();
+    }
 
-    thatAccount.save();
     this.save();
-
     this.entries.splice(index, 1);
+    if(callback)
+      callback();
 
   },
   // utility functions
   // transact should be able to rollback if something goes wrong, save if all works
-  _writeEntry: function(options, success) {
+  _writeEntry: function(options, callback) {
     if(!options || !options.type || !options.subject || !options.amount)
       throw("Error. Minimum data for entry (subject, amount) not present");
     else {
@@ -160,18 +161,22 @@ Account.prototype = {
       };
 
       var self = this;
-      this.checkbook.storage.write("entries", options, function(insertId) {
-        if(!options.id) {
-          options.id = insertId;
-          self.entries.push(options);
-          self.sort();
+      this.checkbook.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"},
+        function() {
+          self.checkbook.storage.write("entries", options, function(insertId) {
+            if(!options.id) {
+              options.id = insertId;
+              self.entries.push(options);
+              self.sort();
+            }
+
+            if(callback)
+              callback(insertId);
+            if(!options.calledFromSave)
+              self.save();
+          });
         }
-        
-        if(success)
-          success(insertId);
-        if(!options.calledFromSave)
-          self.save();
-      });
+      );      
     }
   },
   sort: function(column) {

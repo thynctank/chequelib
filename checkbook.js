@@ -6,7 +6,7 @@
 // type
 // notes
 
-function Checkbook(dbName) {
+function Checkbook(dbName, success, failure) {
   dbName = (dbName) ? dbName : "Cheque";
   var self = this;
   this.accounts = new ChequeHash();
@@ -20,17 +20,27 @@ function Checkbook(dbName) {
         var acct = new Account(data);
         self.accounts.set(acct.name, acct);
       }
+      if(success)
+        success(self);
+    }, function() {
+      if(failure)
+        failure();
     });
   });
 }
 
 Checkbook.prototype = {
-  addAccount: function(options, success) {
+  addOrAccessAccount: function(options, callback) {
     var self = this;
     var name = options.name;
     
-    if(this.accounts.has(name))
+    if(this.accounts.has(name)) {
+      if(callback) {
+        var acct = this.getAccount(name);
+        callback(acct);
+      }
       return;
+    }
     else {
       this.storage.count("accounts", {name: options.name}, function(rowCount) {
         if(rowCount === 0) {
@@ -39,7 +49,8 @@ Checkbook.prototype = {
             options.id = insertId;
             var acct = new Account(options);
             self.accounts.set(name, acct);
-            success();
+            if(callback)
+              callback(acct);
           });
         }
       });
@@ -51,6 +62,13 @@ Checkbook.prototype = {
     this.storage.erase("entries", {account_id: acct.id});
     this.storage.erase("accounts", {id: acct.id}, success);
     this.accounts.remove(name);
+  },
+  removeAccountById: function(id, success) {
+    // wipe out all entries for this account number first
+    var acct = this.getAccountById(id);
+    this.storage.erase("entries", {account_id: id});
+    this.storage.erase("accounts", {id: id}, success);
+    this.accounts.remove(acct.name);
   },
   getAccount: function(name) {
     return this.accounts.get(name);

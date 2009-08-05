@@ -39,7 +39,6 @@ Checkbook.prototype = {
         var acct = this.getAccount(name);
         callback(acct);
       }
-      return;
     }
     else {
       this.storage.count("accounts", {name: options.name}, function(rowCount) {

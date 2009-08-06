@@ -13,7 +13,7 @@ function Checkbook(dbName, success, failure) {
   this.storage = new Storage(dbName);
   this.storage.createTable("accounts", {name: "string", balance: "number", type: "string", notes: "text"}, function() {
     // in reality, query accounts table for names/balances
-    self.storage.read("accounts", null, null, function(rows) {
+    self.storage.read("accounts", null, {order: "name"}, function(rows) {
       for(var i = 0, j = rows.length; i < j; i++) {
         var data = rows[i];
         data.checkbook = self;
@@ -30,6 +30,15 @@ function Checkbook(dbName, success, failure) {
 }
 
 Checkbook.prototype = {
+  accountsByName: function() {
+    return this.accounts.getValues().sort(function(a, b) {
+      if(a.name > b.name)
+        return 1;
+      else if(a.name < b.name)
+        return -1;
+      return 0;
+    });
+  },
   addOrAccessAccount: function(options, callback) {
     var self = this;
     var name = options.name;

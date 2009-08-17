@@ -48,9 +48,13 @@ Account.prototype = {
     if(this.entries.length === 0) {
       if(this.entries.length === 0 && this.balance > 0)
         this.credit({subject: "Opening Balance", amount: this.balance, calledFromSave: true}, updateBalance);
-      if(this.entries.length === 0 && this.balance < 0)
+      else if(this.entries.length === 0 && this.balance < 0)
         this.debit({subject: "Opening Balance", amount: this.balance, calledFromSave: true}, updateBalance);
+      else
+        updateBalance();
     }
+    else
+      updateBalance();
   },
   // options for getBalance allow for filtering by type, actual vs cleared
   getBalance: function(options) {
@@ -122,7 +126,13 @@ Account.prototype = {
   },
   eraseEntry: function(index, callback) {
     var entry = this.entries[index];
-    this.checkbook.storage.erase("entries", {id: entry.id});
+    var afterErase = function() {
+      this.entries.splice(index, 1);
+      this.balance = this.getBalance();
+      this.save(callback);
+    }.bind(this);
+    
+    this.checkbook.storage.erase("entries", {id: entry.id}, afterErase);
     // erase both sides of a transfer
     if(entry.transfer_entry_id) {
       this.checkbook.storage.erase("entries", {id: entry.transfer_entry_id});
@@ -135,12 +145,6 @@ Account.prototype = {
 
       thatAccount.save();
     }
-
-    this.save();
-    this.entries.splice(index, 1);
-    if(callback)
-      callback();
-
   },
   // utility functions
   // transact should be able to rollback if something goes wrong, save if all works

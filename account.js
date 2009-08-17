@@ -25,8 +25,6 @@ function Account(options) {
     this.balance = options.balance || 0;
     this.notes = options.notes;
     this.entries = [];
-    
-    var self = this;
   }
 }
 
@@ -42,24 +40,31 @@ Account.prototype = {
     });
   },
   // save balance for reporting purposes (as in dashboard)
-  save: function() {
+  save: function(callback) {
+    var updateBalance = function() {
+      this.balance = this.getBalance();
+      this.checkbook.storage.write("accounts", {id: this.id, balance: this.balance}, callback);
+    }.bind(this);
     if(this.entries.length === 0) {
       if(this.entries.length === 0 && this.balance > 0)
-        this.credit({subject: "Opening Balance", amount: this.balance, calledFromSave: true});
+        this.credit({subject: "Opening Balance", amount: this.balance, calledFromSave: true}, updateBalance);
       if(this.entries.length === 0 && this.balance < 0)
-        this.debit({subject: "Opening Balance", amount: this.balance, calledFromSave: true});
+        this.debit({subject: "Opening Balance", amount: this.balance, calledFromSave: true}, updateBalance);
     }
-    this.balance = this.getBalance();
-    this.checkbook.storage.write("accounts", {id: this.id, balance: this.balance});
   },
   // options for getBalance allow for filtering by type, actual vs cleared
   getBalance: function(options) {
     var balance = 0;
     for(var i = 0, j = this.entries.length; i < j; i++) {
-      if(this.entries[i].type == "credit")
-        balance += this.entries[i].amount;
-      else
-        balance -= this.entries[i].amount;
+      var entry = this.entries[i];
+      switch(entry.type) {
+        case "credit":
+          balance += entry.amount;
+          break;
+        case "debit":
+          balance -= entry.amount;
+          break;
+      }
     }
     return balance;
   },
@@ -89,8 +94,6 @@ Account.prototype = {
         throw("Error. Transfer account does not exist");
       else {
         options.subject = options.subject ? options.subject : "Transfer: " + this.name + " to " + thatAccount.name;
-
-        debugger;
         var theseOptions = options;
         var thoseOptions = options;
         theseOptions.transfer_account_id = thatAccount.id;

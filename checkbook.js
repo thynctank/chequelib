@@ -57,8 +57,7 @@ Checkbook.prototype = {
             options.id = insertId;
             var acct = new Account(options);
             self.accounts.set(name, acct);
-            if(callback)
-              callback(acct);
+            acct.save(callback);
           });
         }
       });

@@ -41,10 +41,14 @@ Account.prototype = {
   },
   // save balance for reporting purposes (as in dashboard)
   save: function(callback) {
+    var self = this;
     var updateBalance = function() {
-      this.balance = this.getBalance();
-      this.checkbook.storage.write("accounts", {id: this.id, balance: this.balance}, callback);
-    }.bind(this);
+      self.balance = self.getBalance();
+      self.checkbook.storage.write("accounts", {id: self.id, balance: self.balance}, function() {
+        if(callback)
+          callback(self);
+      });
+    };
     if(this.entries.length === 0) {
       if(this.entries.length === 0 && this.balance > 0)
         this.credit({subject: "Current Balance", amount: this.balance, calledFromSave: true}, updateBalance);
@@ -125,12 +129,13 @@ Account.prototype = {
     }
   },
   eraseEntry: function(index, callback) {
+    var self = this;
     var entry = this.entries[index];
     var afterErase = function() {
-      this.entries.splice(index, 1);
-      this.balance = this.getBalance();
-      this.save(callback);
-    }.bind(this);
+      self.entries.splice(index, 1);
+      self.balance = self.getBalance();
+      self.save(callback);
+    };
     
     this.checkbook.storage.erase("entries", {id: entry.id}, afterErase);
     // erase both sides of a transfer

@@ -47,9 +47,9 @@ Account.prototype = {
     }.bind(this);
     if(this.entries.length === 0) {
       if(this.entries.length === 0 && this.balance > 0)
-        this.credit({subject: "Opening Balance", amount: this.balance, calledFromSave: true}, updateBalance);
+        this.credit({subject: "Current Balance", amount: this.balance, calledFromSave: true}, updateBalance);
       else if(this.entries.length === 0 && this.balance < 0)
-        this.debit({subject: "Opening Balance", amount: this.balance, calledFromSave: true}, updateBalance);
+        this.debit({subject: "Current Balance", amount: this.balance, calledFromSave: true}, updateBalance);
       else
         updateBalance();
     }

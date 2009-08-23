@@ -76,7 +76,7 @@ Account.prototype = {
   debit: function(options, success) {
     options = options ? options : {};
     options.type = "debit";
-    this._writeEntry(options, success);
+    this.writeEntry(options, success);
   },
   getBalanceString: function(options) {
     // return as string with 2 decimal places
@@ -85,7 +85,7 @@ Account.prototype = {
   credit: function(options, success) {
     options = options ? options : {};
     options.type = "credit";
-    this._writeEntry(options, success);
+    this.writeEntry(options, success);
   },
   // takes regular options obj but also takes transferAccountName
   transfer: function(options) {
@@ -106,14 +106,14 @@ Account.prototype = {
         var self = this;
         
         self.debit(theseOptions, function(thisInsertId) {
-          // set to ID obtained from first _writeEntry
+          // set to ID obtained from first writeEntry
           thoseOptions.transfer_entry_id = thisInsertId;
           // get second ID for third db hit
           thatAccount.credit(thoseOptions, function(thatInsertId) {
             theseOptions.transfer_entry_id = thatInsertId;
             theseOptions.id = thisInsertId;
             theseOptions.type = "debit";
-            self._writeEntry(theseOptions);
+            self.writeEntry(theseOptions);
           }, function() {
             // rollback if second transaction failed
             self.checkbook.storage.erase("entries", {id: thisInsertId}, function() {
@@ -148,7 +148,7 @@ Account.prototype = {
   },
   // utility functions
   // transact should be able to rollback if something goes wrong, save if all works
-  _writeEntry: function(options, callback) {
+  writeEntry: function(options, callback) {
     if(!options || !options.type || !options.subject || !options.amount)
       throw("Error. Minimum data for entry (subject, amount) not present");
     else {

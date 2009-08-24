@@ -1,3 +1,4 @@
+1. Issues surrounding negative balances (credit cards) - write help docs for this
 1. Make sure transfers use transactions and roll back if one of the two fails, ensure balance maintained correctly in these situations
 1. Add checkbox to entry list indicating cleared/not. Add check/uncheck all checkbox.
 1. Add info button to account list for editing account info, notes (account details scene)

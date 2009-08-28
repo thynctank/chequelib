@@ -12,7 +12,6 @@ function Checkbook(dbName, success, failure) {
   this.accounts = new ChequeHash();
   this.storage = new Storage(dbName);
   this.storage.createTable("accounts", {name: "string", balance: "number", type: "string", notes: "text"}, function() {
-    // in reality, query accounts table for names/balances
     self.storage.read("accounts", null, {order: "name"}, function(rows) {
       for(var i = 0, j = rows.length; i < j; i++) {
         var data = rows[i];

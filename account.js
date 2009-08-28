@@ -1,8 +1,9 @@
 // entries table:
 // 
 // id
-// account_id
-// type
+// account_id (required)
+// type (debit/credit, required)
+// category (default subject line, determines icon, required)
 // subject (required)
 // amount (required)
 // date
@@ -51,9 +52,9 @@ Account.prototype = {
     };
     if(this.entries.length === 0) {
       if(this.entries.length === 0 && this.balance > 0)
-        this.credit({subject: "Current Balance", amount: this.balance, calledFromSave: true}, updateBalance);
+        this.credit({category: "Current Balance", amount: this.balance, calledFromSave: true}, updateBalance);
       else if(this.entries.length === 0 && this.balance < 0)
-        this.debit({subject: "Current Balance", amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
+        this.debit({category: "Current Balance", amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
       else
         updateBalance();
     }
@@ -154,14 +155,15 @@ Account.prototype = {
   // utility functions
   // transact should be able to rollback if something goes wrong, save if all works
   writeEntry: function(options, callback) {
-    if(!options || !options.type || !options.subject || !options.amount)
+    if(!options || !options.category || !options.type || !options.amount)
       throw("Error. Minimum data for entry (subject, amount) not present");
     else {
       // require minimum options of type, subject, amount
       options = {
         account_id: this.id,
         type: options.type,
-        subject: options.subject,
+        category: options.category,
+        subject: options.subject || options.category,
         amount: options.amount,
         id: options.id || null,
         date: options.date || (new Date().getTime()),
@@ -173,19 +175,42 @@ Account.prototype = {
       };
 
       var self = this;
-      this.checkbook.storage.createTable("entries", {account_id: "number", type: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"},
+      var storage = self.checkbook.storage;
+      storage.createTable("entries", {account_id: "number", type: "string", category: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"},
         function() {
-          self.checkbook.storage.write("entries", options, function(insertId) {
-            if(!options.id) {
-              options.id = insertId;
-              self.entries.push(options);
-              self.sort();
-            }
+          storage.createTable("categories", {name: "string", type: "string"}, function() {
+            var defaultCategories = new ChequeHash({
+              "Card Swiped": "debit",
+              "Check": "debit",
+              "E-Purchase": "debit",
+              "Withdrawal": "debit",
+              "ATM Withdrawal": "debit",
+              "Correction - Debit": "debit",
+              "Deposit": "credit",
+              "Refund": "credit",
+              "Correction - Credit": "credit",
+              "Transfer": "debit"
+            });
+            storage.count("categories", null, function(rowCount) {
+              if(rowCount === 0) {
+                defaultCategories.each(function(catType, catName) {
+                  storage.write("categories", {name: catName, type: catType});
+                });
+              }
+            });
+            
+            storage.write("entries", options, function(insertId) {
+              if(!options.id) {
+                options.id = insertId;
+                self.entries.push(options);
+                self.sort();
+              }
 
-            if(callback)
-              callback(insertId);
-            if(!options.calledFromSave)
-              self.save();
+              if(callback)
+                callback(insertId);
+              if(!options.calledFromSave)
+                self.save();
+            });
           });
         }
       );      

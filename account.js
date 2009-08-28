@@ -30,6 +30,17 @@ function Account(options) {
 }
 
 Account.prototype = {
+  defaultCategories: [
+    {name: "Card Swiped", type: "debit", code: 1},
+    {name: "Check", type: "debit", code: 2},
+    {name: "E-Purchase", type: "debit", code: 3},
+    {name: "Withdrawal", type: "debit", code: 4},
+    {name: "Deposit", type: "credit", code: 7},
+    {name: "Refund", type: "credit", code: 8},
+    {name: "Correction - Debit", type: "debit", code: 6},
+    {name: "Correction - Credit", type: "credit", code: 9},
+    {name: "Transfer", type: "debit", code: 10}
+  ],
   // if data exists, fill in entries, callback takes entries array
   loadEntries: function(callback) {
     var self = this;
@@ -52,9 +63,9 @@ Account.prototype = {
     };
     if(this.entries.length === 0) {
       if(this.entries.length === 0 && this.balance > 0)
-        this.credit({category: "Current Balance", amount: this.balance, calledFromSave: true}, updateBalance);
+        this.credit({subject: "Current Balance", category: 7, amount: this.balance, calledFromSave: true}, updateBalance);
       else if(this.entries.length === 0 && this.balance < 0)
-        this.debit({category: "Current Balance", amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
+        this.debit({subject: "Current Balance", category: 4, amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
       else
         updateBalance();
     }
@@ -176,26 +187,15 @@ Account.prototype = {
 
       var self = this;
       var storage = self.checkbook.storage;
-      storage.createTable("entries", {account_id: "number", type: "string", category: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"},
+      storage.createTable("entries", {account_id: "number", type: "string", category: "number", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"},
         function() {
-          storage.createTable("categories", {name: "string", type: "string"}, function() {
-            var defaultCategories = new ChequeHash({
-              "Card Swiped": "debit",
-              "Check": "debit",
-              "E-Purchase": "debit",
-              "Withdrawal": "debit",
-              "ATM Withdrawal": "debit",
-              "Correction - Debit": "debit",
-              "Deposit": "credit",
-              "Refund": "credit",
-              "Correction - Credit": "credit",
-              "Transfer": "debit"
-            });
+          storage.createTable("categories", {name: "string", type: "string", code: "number"}, function() {
             storage.count("categories", null, function(rowCount) {
               if(rowCount === 0) {
-                defaultCategories.each(function(catType, catName) {
-                  storage.write("categories", {name: catName, type: catType});
-                });
+                for(var i = 0, j = this.defaultCategories.length; i < j; i++) {
+                  var category = this.defaultCategories[i];
+                  storage.write("categories", category);
+                };
               }
             });
             

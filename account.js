@@ -53,7 +53,7 @@ Account.prototype = {
       if(this.entries.length === 0 && this.balance > 0)
         this.credit({subject: "Current Balance", amount: this.balance, calledFromSave: true}, updateBalance);
       else if(this.entries.length === 0 && this.balance < 0)
-        this.debit({subject: "Current Balance", amount: this.balance, calledFromSave: true}, updateBalance);
+        this.debit({subject: "Current Balance", amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
       else
         updateBalance();
     }

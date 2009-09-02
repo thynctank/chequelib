@@ -29,18 +29,19 @@ function Account(options) {
   }
 }
 
+Account.defaultCategories = [
+  {name: "Card Swiped", type: "debit", code: 1},
+  {name: "Check", type: "debit", code: 2},
+  {name: "E-Purchase", type: "debit", code: 3},
+  {name: "Withdrawal", type: "debit", code: 4},
+  {name: "Deposit", type: "credit", code: 7},
+  {name: "Refund", type: "credit", code: 8},
+  {name: "Correction - Debit", type: "debit", code: 6},
+  {name: "Correction - Credit", type: "credit", code: 9},
+  {name: "Transfer", type: "debit", code: 10}
+];
+
 Account.prototype = {
-  defaultCategories: [
-    {name: "Card Swiped", type: "debit", code: 1},
-    {name: "Check", type: "debit", code: 2},
-    {name: "E-Purchase", type: "debit", code: 3},
-    {name: "Withdrawal", type: "debit", code: 4},
-    {name: "Deposit", type: "credit", code: 7},
-    {name: "Refund", type: "credit", code: 8},
-    {name: "Correction - Debit", type: "debit", code: 6},
-    {name: "Correction - Credit", type: "credit", code: 9},
-    {name: "Transfer", type: "debit", code: 10}
-  ],
   // if data exists, fill in entries, callback takes entries array
   loadEntries: function(callback) {
     var self = this;
@@ -192,8 +193,9 @@ Account.prototype = {
           storage.createTable("categories", {name: "string", type: "string", code: "number"}, function() {
             storage.count("categories", null, function(rowCount) {
               if(rowCount === 0) {
-                for(var i = 0, j = this.defaultCategories.length; i < j; i++) {
-                  var category = this.defaultCategories[i];
+                defaultCategories = Account.defaultCategories;
+                for(var i = 0, j = defaultCategories.length; i < j; i++) {
+                  var category = defaultCategories[i];
                   storage.write("categories", category);
                 };
               }

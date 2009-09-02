@@ -10,7 +10,7 @@
 // memo
 // transfer_account_id (for lookup of entry when deleting)
 // transfer_entry_id (for lookup of entry when deleting)
-// pending
+// cleared
 // check_number
 
 // entries is an array of obj literals with properties matching entries table cols
@@ -63,9 +63,9 @@ Account.prototype = {
     };
     if(this.entries.length === 0) {
       if(this.entries.length === 0 && this.balance > 0)
-        this.credit({subject: "Current Balance", category: 7, amount: this.balance, calledFromSave: true}, updateBalance);
+        this.credit({subject: "Current Balance", category: 7, cleared: 1, amount: this.balance, calledFromSave: true}, updateBalance);
       else if(this.entries.length === 0 && this.balance < 0)
-        this.debit({subject: "Current Balance", category: 4, amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
+        this.debit({subject: "Current Balance", category: 4, cleared: 1, amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
       else
         updateBalance();
     }
@@ -181,13 +181,13 @@ Account.prototype = {
         memo: options.memo || null,
         transfer_account_id: options.transfer_account_id || null,
         transfer_entry_id: options.transfer_entry_id || null,
-        pending: options.pending || 1,
+        cleared: options.cleared || 1,
         check_number: options.check_number || null
       };
 
       var self = this;
       var storage = self.checkbook.storage;
-      storage.createTable("entries", {account_id: "number", type: "string", category: "number", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", pending: "number", check_number: "string"},
+      storage.createTable("entries", {account_id: "number", type: "string", category: "number", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", cleared: "number", check_number: "string"},
         function() {
           storage.createTable("categories", {name: "string", type: "string", code: "number"}, function() {
             storage.count("categories", null, function(rowCount) {

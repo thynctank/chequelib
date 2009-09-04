@@ -30,15 +30,15 @@ function Account(options) {
 }
 
 Account.defaultCategories = [
-  {name: "Card Swiped", type: "debit", code: 1},
-  {name: "Check", type: "debit", code: 2},
-  {name: "E-Purchase", type: "debit", code: 3},
-  {name: "Withdrawal", type: "debit", code: 4},
-  {name: "Deposit", type: "credit", code: 7},
-  {name: "Refund", type: "credit", code: 8},
-  {name: "Correction - Debit", type: "debit", code: 6},
-  {name: "Correction - Credit", type: "credit", code: 9},
-  {name: "Transfer", type: "debit", code: 10}
+  {name: "Card Swiped", type: "debit"},
+  {name: "Check", type: "debit"},
+  {name: "E-Purchase", type: "debit"},
+  {name: "Withdrawal", type: "debit"},
+  {name: "Deposit", type: "credit"},
+  {name: "Refund", type: "credit"},
+  {name: "Correction - Debit", type: "debit"},
+  {name: "Correction - Credit", type: "credit"},
+  {name: "Transfer", type: "debit"}
 ];
 
 Account.prototype = {
@@ -64,9 +64,9 @@ Account.prototype = {
     };
     if(this.entries.length === 0) {
       if(this.entries.length === 0 && this.balance > 0)
-        this.credit({subject: "Current Balance", category: 7, cleared: 1, amount: this.balance, calledFromSave: true}, updateBalance);
+        this.credit({subject: "Current Balance", category: "Starting balance", cleared: 1, amount: this.balance, calledFromSave: true}, updateBalance);
       else if(this.entries.length === 0 && this.balance < 0)
-        this.debit({subject: "Current Balance", category: 4, cleared: 1, amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
+        this.debit({subject: "Current Balance", category: "Starting balance", cleared: 1, amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
       else
         updateBalance();
     }
@@ -188,9 +188,9 @@ Account.prototype = {
 
       var self = this;
       var storage = self.checkbook.storage;
-      storage.createTable("entries", {account_id: "number", type: "string", category: "number", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", cleared: "number", check_number: "string"},
+      storage.createTable("entries", {account_id: "number", type: "string", category: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", cleared: "number", check_number: "string"},
         function() {
-          storage.createTable("categories", {name: "string", type: "string", code: "number"}, function() {
+          storage.createTable("categories", {name: "string", type: "string"}, function() {
             storage.count("categories", null, function(rowCount) {
               if(rowCount === 0) {
                 defaultCategories = Account.defaultCategories;

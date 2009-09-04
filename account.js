@@ -182,7 +182,7 @@ Account.prototype = {
         memo: options.memo || null,
         transfer_account_id: options.transfer_account_id || null,
         transfer_entry_id: options.transfer_entry_id || null,
-        cleared: options.cleared || 1,
+        cleared: options.cleared || 0,
         check_number: options.check_number || null
       };
 

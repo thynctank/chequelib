@@ -29,18 +29,6 @@ function Account(options) {
   }
 }
 
-Account.defaultCategories = [
-  {name: "Card Swiped", type: "debit"},
-  {name: "Check", type: "debit"},
-  {name: "E-Purchase", type: "debit"},
-  {name: "Withdrawal", type: "debit"},
-  {name: "Deposit", type: "credit"},
-  {name: "Refund", type: "credit"},
-  {name: "Correction - Debit", type: "debit"},
-  {name: "Correction - Credit", type: "credit"},
-  {name: "Transfer", type: "debit"}
-];
-
 Account.prototype = {
   // if data exists, fill in entries, callback takes entries array
   loadEntries: function(callback) {
@@ -190,29 +178,17 @@ Account.prototype = {
       var storage = self.checkbook.storage;
       storage.createTable("entries", {account_id: "number", type: "string", category: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", cleared: "number", check_number: "string"},
         function() {
-          storage.createTable("categories", {name: "string", type: "string"}, function() {
-            storage.count("categories", null, function(rowCount) {
-              if(rowCount === 0) {
-                defaultCategories = Account.defaultCategories;
-                for(var i = 0, j = defaultCategories.length; i < j; i++) {
-                  var category = defaultCategories[i];
-                  storage.write("categories", category);
-                };
-              }
-            });
-            
-            storage.write("entries", options, function(insertId) {
-              if(!options.id) {
-                options.id = insertId;
-                self.entries.push(options);
-                self.sort();
-              }
+          storage.write("entries", options, function(insertId) {
+            if(!options.id) {
+              options.id = insertId;
+              self.entries.push(options);
+              self.sort();
+            }
 
-              if(callback)
-                callback(insertId);
-              if(!options.calledFromSave)
-                self.save();
-            });
+            if(callback)
+              callback(insertId);
+            if(!options.calledFromSave)
+              self.save();
           });
         }
       );      

@@ -25,6 +25,32 @@ function Checkbook(dbName, success, failure) {
       if(failure)
         failure();
     });
+    
+    var s = self.storage;
+    
+    s.createTable("categories", {name: "string", type: "string"}, function() {
+      s.count("categories", null, function(rowCount) {
+        if(rowCount === 0) {
+          var defaultCategories = [
+            {name: "Card Swiped", type: "debit"},
+            {name: "Check", type: "debit"},
+            {name: "E-Purchase", type: "debit"},
+            {name: "Withdrawal", type: "debit"},
+            {name: "Deposit", type: "credit"},
+            {name: "Refund", type: "credit"},
+            {name: "Correction - Debit", type: "debit"},
+            {name: "Correction - Credit", type: "credit"},
+            {name: "Transfer", type: "debit"}
+          ];
+          
+          for(var i = 0, j = defaultCategories.length; i < j; i++) {
+            var category = defaultCategories[i];
+            s.write("categories", category);
+          }
+        }
+      });
+    });
+    
   });
 }
 

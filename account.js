@@ -50,16 +50,21 @@ Account.prototype = {
           callback(self);
       });
     };
-    if(this.entries.length === 0)
-      this.loadEntries();
-    // if still 0, must be new acct
     if(this.entries.length === 0) {
-      if(this.balance > 0)
-        this.credit({subject: "Current Balance", category: "Starting balance", cleared: 1, amount: this.balance, calledFromSave: true}, updateBalance);
-      else if(this.balance < 0)
-        this.debit({subject: "Current Balance", category: "Starting balance", cleared: 1, amount: Math.abs(this.balance), calledFromSave: true}, updateBalance);
-      else
-        updateBalance();
+      var originalBalance = this.balance;
+      this.loadEntries(function() {
+        // if still 0, must be new acct
+        if(self.entries.length === 0) {
+          if(originalBalance > 0)
+            self.credit({subject: "Current Balance", category: "Starting balance", cleared: 1, amount: originalBalance, calledFromSave: true}, updateBalance);
+          else if(originalBalance < 0)
+            self.debit({subject: "Current Balance", category: "Starting balance", cleared: 1, amount: Math.abs(originalBalance), calledFromSave: true}, updateBalance);
+          else
+            updateBalance();
+        }
+        else
+          updateBalance();
+      });
     }
     else
       updateBalance();

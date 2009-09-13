@@ -136,11 +136,13 @@ Account.prototype = {
           }, null, tx);
         }, function() {
           // push entry on this acct, save
-          self.entries.push(theseOptions);
-          self.save();
+          self.loadEntries(function() {
+            self.save();
+          });
           // push entry on that acct, save
-          thatAccount.entries.push(thoseOptions);
-          thatAccount.save();
+          thatAccount.loadEntries(function() {
+            thatAccount.save();
+          });
           
           if(callback)
             callback();
@@ -159,7 +161,9 @@ Account.prototype = {
       if(entry.transfer_entry_id) {
         self.checkbook.storage.erase("entries", {id: entry.transfer_entry_id}, function() {
           var thatAccount = self.checkbook.getAccountById(entry.transfer_account_id);
-          thatAccount.save();
+          thatAccount.loadEntries(function() {
+            thatAccount.save();
+          });
         });
       }
     });

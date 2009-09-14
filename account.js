@@ -33,11 +33,15 @@ Account.prototype = {
   // if data exists, fill in entries, callback takes entries array
   loadEntries: function(callback) {
     var self = this;
-    this.checkbook.storage.read("entries", {account_id: this.id}, {order: "date"}, function(rows) {
+    var doAfter = function(rows) {
       self.entries = rows;
       self.balance = self.getBalance();
       if(callback)
         callback();
+    };
+    this.checkbook.storage.read("entries", {account_id: this.id}, {order: "date"}, doAfter, function() {
+      var rows = [];
+      doAfter(rows);
     });
   },
   // save balance for reporting purposes (as in dashboard)

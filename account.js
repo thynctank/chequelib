@@ -60,9 +60,9 @@ Account.prototype = {
         // if still 0, must be new acct
         if(self.entries.length === 0) {
           if(originalBalance > 0)
-            self.credit({subject: "Current Balance", category: "Starting balance", cleared: 1, amount: originalBalance, calledFromSave: true}, updateBalance);
+            self.credit({subject: "Starting Balance", category: "Deposit", cleared: 1, amount: originalBalance, calledFromSave: true}, updateBalance);
           else if(originalBalance < 0)
-            self.debit({subject: "Current Balance", category: "Starting balance", cleared: 1, amount: Math.abs(originalBalance), calledFromSave: true}, updateBalance);
+            self.debit({subject: "Starting Balance", category: "Withdrawal", cleared: 1, amount: Math.abs(originalBalance), calledFromSave: true}, updateBalance);
           else
             updateBalance();
         }

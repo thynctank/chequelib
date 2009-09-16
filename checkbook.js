@@ -40,7 +40,7 @@ function Checkbook(dbName, success, failure) {
             {name: "Refund", type: "credit"},
             {name: "Correction - Debit", type: "debit"},
             {name: "Correction - Credit", type: "credit"},
-            {name: "Transfer", type: "debit"}
+            {name: "Transfer", type: ""}
           ];
           
           for(var i = 0, j = defaultCategories.length; i < j; i++) {

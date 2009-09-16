@@ -114,7 +114,9 @@ Account.prototype = {
       if(!thatAccount)
         throw("Error. Transfer account does not exist");
       else {
-        options.category = options.subject = options.subject ? options.subject : "Transfer: " + this.name + " to " + thatAccount.name;
+        options.category = "Transfer";
+        options.subject = options.subject || "Transfer: " + this.name + " to " + thatAccount.name;
+
         var theseOptions = this.getEntryOptions(options);
         var thoseOptions = this.getEntryOptions(options);
         theseOptions.type = "debit";

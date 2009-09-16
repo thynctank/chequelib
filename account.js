@@ -116,11 +116,13 @@ Account.prototype = {
       else {
         options.category = "Transfer";
         options.subject = options.subject || "Transfer: " + this.name + " to " + thatAccount.name;
-
+        options.transfer_entry_id = null;
+        
         var theseOptions = this.getEntryOptions(options);
-        var thoseOptions = this.getEntryOptions(options);
         theseOptions.type = "debit";
         theseOptions.transfer_account_id = thatAccount.id;
+
+        var thoseOptions = this.getEntryOptions(options);
         thoseOptions.type = "credit";
         thoseOptions.account_id = thatAccount.id;
         thoseOptions.transfer_account_id = this.id;
@@ -131,11 +133,11 @@ Account.prototype = {
         storage.transact(function(tx) {
           // write debit portion
           storage.write("entries", theseOptions, function(thisInsertId) {
+            theseOptions.id = thisInsertId;
             thoseOptions.transfer_entry_id = thisInsertId;
             // write credit portion w/ transfer_account_id and transfer_entry_id set appropriately
             storage.write("entries", thoseOptions, function(thatInsertId) {
               // update debit portion w/ second transfer_entry_id
-              theseOptions.id = thisInsertId;
               theseOptions.transfer_entry_id = thatInsertId;
               storage.write("entries", theseOptions, null, null, tx);
             }, null, tx);
@@ -143,15 +145,13 @@ Account.prototype = {
         }, function() {
           // push entry on this acct, save
           self.loadEntries(function() {
-            self.save();
+            self.save(function() {
+              // push entry on that acct, save
+              thatAccount.loadEntries(function() {
+                thatAccount.save(callback);
+              });
+            });
           });
-          // push entry on that acct, save
-          thatAccount.loadEntries(function() {
-            thatAccount.save();
-          });
-          
-          if(callback)
-            callback();
         });
       }
     }
@@ -159,19 +159,31 @@ Account.prototype = {
   eraseEntry: function(index, callback) {
     var self = this;
     var entry = this.entries[index];
+    var otherEntryId = entry.transfer_entry_id;
+    var otherAccountId = entry.transfer_account_id;
+    
+    console.log("There IS a callback...");
     
     this.checkbook.storage.erase("entries", {id: entry.id}, function() {
-      self.entries.splice(index, 1);
-      self.save(callback);
-      // erase both sides of a transfer
-      if(entry.transfer_entry_id) {
-        self.checkbook.storage.erase("entries", {id: entry.transfer_entry_id}, function() {
-          var thatAccount = self.checkbook.getAccountById(entry.transfer_account_id);
-          thatAccount.loadEntries(function() {
-            thatAccount.save();
-          });
+      self.loadEntries(function() {
+        // erase both sides of a transfer
+        self.save(function() {
+          if(otherEntryId) {
+            self.checkbook.storage.erase("entries", {id: otherEntryId}, function() {
+              var thatAccount = self.checkbook.getAccountById(otherAccountId);
+              thatAccount.loadEntries(function() {
+                console.log("Passing callback to thatAccount.save()");
+                thatAccount.save(callback);
+              });
+            });
+          }
+          else {
+            console.log("Calling callback");
+            if(callback)
+              callback();
+          }        
         });
-      }
+      });
     });
   },
   // utility functions

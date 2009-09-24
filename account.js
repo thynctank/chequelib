@@ -218,6 +218,8 @@ Account.prototype = {
         function() {
           storage.createIndex("entries", "account_id");
           storage.createIndex("entries", "transfer_entry_id");
+          storage.createIndex("entries", "subject");
+          
           storage.write("entries", options, function(insertId) {
             if(!options.id) {
               options.id = insertId;

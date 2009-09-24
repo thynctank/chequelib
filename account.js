@@ -216,6 +216,8 @@ Account.prototype = {
       var storage = self.checkbook.storage;
       storage.createTable("entries", {account_id: "number", type: "string", category: "string", subject: "string", amount: "number", date: "string", memo: "string", transfer_account_id: "number", transfer_entry_id: "number", cleared: "number", check_number: "string"},
         function() {
+          storage.createIndex("entries", "account_id");
+          storage.createIndex("entries", "transfer_entry_id");
           storage.write("entries", options, function(insertId) {
             if(!options.id) {
               options.id = insertId;

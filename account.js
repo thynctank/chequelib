@@ -132,6 +132,7 @@ Account.prototype = {
         
         storage.transact(function(tx) {
           // write debit portion
+          
           storage.write("entries", theseOptions, function(thisInsertId) {
             theseOptions.id = thisInsertId;
             thoseOptions.transfer_entry_id = thisInsertId;
@@ -156,32 +157,15 @@ Account.prototype = {
       }
     }
   },
-  eraseEntry: function(index, callback) {
+  eraseEntry: function(entryId, callback) {
     var self = this;
-    var entry = this.entries[index];
-    var otherEntryId = entry.transfer_entry_id;
-    var otherAccountId = entry.transfer_account_id;
-    
-    console.log("There IS a callback...");
-    
-    this.checkbook.storage.erase("entries", {id: entry.id}, function() {
+
+    this.checkbook.storage.erase("entries", {id: entryId}, function() {
       self.loadEntries(function() {
         // erase both sides of a transfer
         self.save(function() {
-          if(otherEntryId) {
-            self.checkbook.storage.erase("entries", {id: otherEntryId}, function() {
-              var thatAccount = self.checkbook.getAccountById(otherAccountId);
-              thatAccount.loadEntries(function() {
-                console.log("Passing callback to thatAccount.save()");
-                thatAccount.save(callback);
-              });
-            });
-          }
-          else {
-            console.log("Calling callback");
-            if(callback)
-              callback();
-          }        
+          if(callback)
+            callback();
         });
       });
     });
